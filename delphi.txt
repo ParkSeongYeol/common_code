@@ -1,4 +1,4 @@
-// WinExecAndWait32 함수 적용
+//------------- WinExecAndWait32 함수 적용 ---------------
 function WinExecAndWait32(FileName: string; Visibility: Integer): integer;
 var
   zAppName: array[0..512] of Char;
@@ -38,3 +38,63 @@ begin
     CloseHandle(ProcessInfo.hThread);
   end;
 end;
+
+//--------------- String Truncation Function -----------------------
+// 2 functions are along with
+function MakeFinalTruncString(ARefStr, ASubStr : String; ACanvas : TCanvas; ACanvasWidth : Integer) : String;
+var
+  idx, StrWidth : integer;
+  SubSubStr : string;
+begin
+  result := '';
+
+  if ARefStr = ASubStr then begin
+    Result := ASubStr;
+  end else begin
+    for idx := Length(ASubStr) downto 1 do
+    begin
+      SubSubStr := Copy(ASubStr, 0, idx);
+      SubSubStr := SubSubStr + '...';
+      StrWidth := ACanvas.TextWidth(SubSubStr);
+      if StrWidth <  ACanvasWidth then
+      begin
+        Result := SubSubStr;
+        exit;
+      end;
+    end;
+  end;
+end;
+
+function TruncateString(ARefStr : String; ACanvas : TCanvas; ACanvasWidth : Integer; AFirstIdx, ALastIdx : Integer) : String;
+var
+  StrWidth, StrCount, NewFirstIdx, NewLastIdx : integer;
+  SubStr : String;
+begin
+  StrCount := ALastIdx + 1;
+  SubStr := Copy(ARefStr, 1, StrCount);
+  StrWidth := ACanvas.TextWidth(SubStr);
+
+  if (AFirstIdx >= ALastIdx) then  begin
+    Result := MakeFinalTruncString(ARefStr, SubStr, ACanvas, ACanvasWidth);
+  end else if StrWidth = ACanvasWidth then begin
+    Result := MakeFinalTruncString(ARefStr, SubStr, ACanvas, ACanvasWidth);
+  end else if StrWidth > ACanvasWidth then begin
+    NewLastIdx := (AFirstIdx + ALastIdx) div 2;
+    Result := TruncateString(ARefStr, ACanvas, ACanvasWidth, AFirstIdx, NewLastIdx);
+  end else begin
+    NewFirstIdx := ALastIdx;
+    NewLastIdx := ALastIdx + ((ALastIdx - AFirstIdx) div 2);
+    Result := TruncateString(ARefStr, ACanvas, ACanvasWidth, NewFirstIdx, NewLastIdx);
+  end;
+end;
+
+// Exmaple
+//procedure TForm68.FormPaint(Sender: TObject);
+//var
+//  TruncStr : string;
+//  ClientRect : TRect;
+//begin
+//  ClientRect := GetClientRect;
+//  TruncStr := TruncateString(Edit1.Text, Canvas, ClientRect.Width, 1, Length(Edit1.Text));
+//  Canvas.TextOut(0,0, TruncStr);
+//en
