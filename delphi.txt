@@ -98,3 +98,91 @@ end;
 //  TruncStr := TruncateString(Edit1.Text, Canvas, ClientRect.Width, 1, Length(Edit1.Text));
 //  Canvas.TextOut(0,0, TruncStr);
 //en
+
+//--------------- Get String Size -----------------------
+function GetFinalStringSize(ARefStr : String; ACanvas : TCanvas; ACanvasSize : TSize; ACurFontSize : Integer) : Integer;
+const
+  MIN_FONT_SIZE = 1;
+  MAX_FONT_SIZE = 100;
+var
+  FontSize, FontSizeBak : integer;
+  StrSize : TSize;
+
+begin
+  FontSize := ACurFontSize;
+  while FontSize >= MIN_FONT_SIZE do
+  begin
+    FontSizeBak := ACanvas.Font.Size;
+    ACanvas.Font.Size := FontSize;
+    StrSize :=  ACanvas.TextExtent(ARefStr);
+    if (StrSize.cx <= ACanvasSize.cx) and (StrSize.cy <= ACanvasSize.cy) then
+    begin
+      ACanvas.Font.Size := FontSizeBak;
+      break;
+    end;
+    Dec(FontSize);
+    ACanvas.Font.Size := FontSizeBak;
+  end;
+
+  Result:= FontSize;
+
+  if Result < MIN_FONT_SIZE then
+    Result := MIN_FONT_SIZE;
+end;
+
+
+function GetStringSize(ARefStr : String; ACanvas : TCanvas; ACanvasSize : TSize; ACurFontSize, AMinFontSize, AMaxFontSize : Integer) : Integer;
+const
+  MIN_FONT_SIZE = 1;
+  MAX_FONT_SIZE = 100;
+var
+  StrSize : TSize;
+  FontSizeBak, NewFontSize : integer;
+begin
+  if (ACanvasSize.cx <= 0) or (ACanvasSize.cy <= 0) then
+  begin
+    Result := MIN_FONT_SIZE;
+    exit;
+  end;
+
+  FontSizeBak := ACanvas.Font.Size;
+  ACanvas.Font.Size := ACurFontSize;
+  StrSize :=  ACanvas.TextExtent(ARefStr);
+
+  if (ACurFontSize <= AMinFontSize) or (ACurFontSize >= AMaxFontSize) then begin
+    Result := GetFinalStringSize(ARefStr, ACanvas, ACanvasSize, ACurFontSize);
+  end else if (StrSize.cx > ACanvasSize.cx) or (StrSize.cy > ACanvasSize.cy) then begin
+    NewFontSize := (AMinFontSize + ACurFontSize) div 2;
+    Result := GetStringSize(ARefStr, ACanvas, ACanvasSize, NewFontSize, AMinFontSize, ACurFontSize);
+  end else if (StrSize.cx < ACanvasSize.cx) or (StrSize.cy < ACanvasSize.cy) then begin
+    NewFontSize := (ACurFontSize + AMaxFontSize) div 2;
+    Result := GetStringSize(ARefStr, ACanvas, ACanvasSize, NewFontSize, ACurFontSize, AMaxFontSize);
+  end;
+
+  ACanvas.Font.Size := FontSizeBak;
+end;
+
+// Example
+//procedure TForm69.FormPaint(Sender: TObject);
+//const
+//  MIN_FONT_SIZE = 1;
+//  MAX_FONT_SIZE = 100;
+//var
+//  FontSize : integer;
+//  ClientRect : TRect;
+//  ClientSize : TSize;
+//  TextSize : TSize;
+//  FontSizeBak : integer;
+//begin
+//  ClientRect := GetClientRect;
+//  ClientSize.cx := ClientRect.Width;
+//  ClientSize.cy := ClientRect.Height;
+//
+//  FontSize := GetStringSize(Edit1.Text, Canvas, ClientSize, Canvas.Font.Size, MIN_FONT_SIZE, MAX_FONT_SIZE);
+//
+//  FontSizeBak := Canvas.Font.Size;
+//  Canvas.Font.Size := FontSize;
+//  TextSize := Canvas.TextExtent(Edit1.Text);
+//  Canvas.TextOut((ClientSize.cx - TextSize.cx) div 2  , (ClientSize.cy - TextSize.cy) div 2, Edit1.Text);
+//  Canvas.Font.Size := FontSizeBak;
+//en
